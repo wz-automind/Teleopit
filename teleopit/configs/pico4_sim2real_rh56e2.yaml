@@ -1,0 +1,43 @@
+defaults:
+  - pico4_sim2real
+  - _self_
+
+# RH56E2 hands are an independent Modbus TCP path. The G1 body remains on
+# Teleopit's official 29-DoF sim2real path and g1_bridge_sdk.
+hands:
+  enabled: true
+  driver: rh56e2_modbus_tcp
+  mode: vr_hand_pose
+  sides: [left, right]
+  rate_hz: 30.0
+  frame_timeout_s: 0.25
+  rh56e2:
+    # Give two hands different IP addresses before connecting both.
+    left_host: 192.168.11.210
+    right_host: 192.168.11.211
+    port: 6000
+    unit_id: 255
+    timeout_s: 0.5
+
+    # Hard interlock: the default session can read telemetry but cannot move.
+    write_enabled: false
+    min_change: 3
+    max_temperature_c: 70
+    health_poll_interval_s: 0.5
+    open_on_failure: false
+    open_on_shutdown: false
+
+    # Manual order: pinky, ring, middle, index, thumb bend, thumb rotation.
+    open_pose: [1000, 1000, 1000, 1000, 1000, 1000]
+    close_pose: [0, 0, 0, 0, 0, 0]
+    speed: [200, 200, 200, 200, 200, 200]
+    trigger_deadzone: 0.05
+    deadman_threshold: 0.5
+    fixed_thumb_yaw: null
+  somehand:
+    config_path: assets/rh56e2/somehand/configs/retargeting/bihand/inspire_rh56e2_bihand.yaml
+    rate_hz: 60.0
+
+hydra:
+  run:
+    dir: .

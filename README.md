@@ -1,3 +1,12 @@
+# RH56E2 集成 fork
+
+G1 + E2 的新增入口见 [中文使用说明](docs/zh/usage.md)、[SSH/SCP 部署](docs/zh/deployment.md)。
+设备通信与 T1 触觉由私有仓库 [rh56e2-sdk](https://github.com/wz-automind/rh56e2-sdk)
+提供（版本 `0.1.0`），须获授权后构建并安装 wheel；默认手部禁写。
+本公开仓库仅含集成代码和配置，**不含 E2 模型/网格**；新克隆后先按
+[外部模型准备](docs/zh/assets.md) 补齐，不能仅靠 clone 就运行 E2 仿真。
+迁移来源、验证范围见 [MIGRATION.md](MIGRATION.md)。下方保留上游介绍。
+
 <p align="center">
   <img src="assets/teleopit.png" width="720" alt="Teleopit whole-body teleoperation demo">
 </p>

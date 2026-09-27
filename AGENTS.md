@@ -1,5 +1,18 @@
 # AGENTS.md
 
+## RH56E2 fork scope
+
+This local fork adds RH56E2 integration using independent `rh56e2-sdk==0.1.0`.
+E2-specific resources belong in `assets/rh56e2/somehand` and the E2 G1 XML/meshes.
+Do not copy SDK source or modify installed somehand. Preserve all existing write interlocks.
+The user-approved migration plan permits local per-task commits and Chinese E2 guidance in
+`docs/zh`; upstream documentation stays unchanged. Existing user checkouts are not migration targets.
+The user authorized a public code-only fork and a private SDK repository under wz-automind.
+Publish only the sanitized branch based directly on upstream; do not push the local migration
+branch/history that contains E2 models. Keep model files local and ignored until redistribution
+permission is confirmed. See docs/zh/assets.md for required external resources.
+Hardware motion is not authorized. Offline tests are not hardware validation.
+
 ## Project Overview
 
 Teleopit is a lightweight, extensible, self-contained humanoid robot whole-body teleoperation framework. It integrates GMR (General Motion Retargeting) and supports train_mimic-exported ONNX RL policy inference.
