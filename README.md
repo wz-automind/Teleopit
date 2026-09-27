@@ -1,4 +1,4 @@
-# RH56E2 集成 fork
+# RH56E2 集成 
 
 G1 + E2 的新增入口见 [中文使用说明](docs/zh/usage.md)、[SSH/SCP 部署](docs/zh/deployment.md)。
 设备通信与 T1 触觉由私有仓库 [rh56e2-sdk](https://github.com/wz-automind/rh56e2-sdk)
