@@ -1,0 +1,5 @@
+extends: "../base/inspire_dfq.yaml"
+hand:
+  name: "inspire_rh56e2_left"
+  side: "left"
+  mjcf_path: "../../../assets/mjcf/inspire_rh56e2_left/model.xml"

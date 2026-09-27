@@ -32,6 +32,11 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+rh56e2 = [
+    "rh56e2-sdk==0.1.0",
+    "somehand @ git+https://github.com/BotRunner64/somehand.git@f0a6b42e151ca10a6eec3e24c24c10cd13c40314",
+    "teleopit[pico4]",
+]
 dev = [
     "pytest",
     "pytest-cov",

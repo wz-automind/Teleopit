@@ -13,13 +13,7 @@ logger = logging.getLogger(__name__)
 
 
 class HandRuntime:
-    def __init__(
-        self,
-        device: HandDevice,
-        mapper: HandInputMapper,
-        *,
-        open_commands: Sequence[HandPoseCommand] = (),
-    ):
+    def __init__(self, device: HandDevice, mapper: HandInputMapper, *, open_commands: Sequence[HandPoseCommand] = ()):
         self._device = device
         self._mapper = mapper
         self.enabled = True
@@ -40,14 +34,7 @@ class HandRuntime:
     def get_state(self, side: str) -> tuple[float, ...]:
         return self._device.get_state(side)
 
-    def tick(
-        self,
-        *,
-        controller_snapshot: object | None,
-        hand_snapshot: object | None,
-        active: bool,
-        now_s: float | None = None,
-    ) -> tuple[HandPoseCommand, ...]:
+    def tick(self, *, controller_snapshot: object | None, hand_snapshot: object | None, active: bool, now_s: float | None = None) -> tuple[HandPoseCommand, ...]:
         if self._failed:
             return ()
         now = time.monotonic() if now_s is None else float(now_s)
@@ -69,7 +56,7 @@ class HandRuntime:
             try:
                 self._device.open_all(force=True, reason="failure")
             except Exception:
-                logger.exception("Failed to open hand after hand runtime failure")
+                logger.exception("Failed to put hand in its configured failure pose")
                 return ()
             return self._open_pose_commands("failure")
 
@@ -81,10 +68,7 @@ class HandRuntime:
         return self._open_pose_commands("shutdown")
 
     def _open_pose_commands(self, reason: str) -> tuple[HandPoseCommand, ...]:
-        return tuple(
-            HandPoseCommand(command.side, command.pose, True, reason)
-            for command in self._open_commands
-        )
+        return tuple(HandPoseCommand(command.side, command.pose, True, reason) for command in self._open_commands)
 
 
 class DisabledHandRuntime:
@@ -97,14 +81,7 @@ class DisabledHandRuntime:
         del side
         raise RuntimeError("Dexterous hand control is disabled")
 
-    def tick(
-        self,
-        *,
-        controller_snapshot: object | None,
-        hand_snapshot: object | None,
-        active: bool,
-        now_s: float | None = None,
-    ) -> tuple[HandPoseCommand, ...]:
+    def tick(self, *, controller_snapshot: object | None, hand_snapshot: object | None, active: bool, now_s: float | None = None) -> tuple[HandPoseCommand, ...]:
         del controller_snapshot, hand_snapshot, active, now_s
         return ()
 
@@ -121,8 +98,15 @@ def build_hand_runtime(cfg: Any) -> HandRuntime | DisabledHandRuntime:
         device, mapper = build_linkerhand_l6(cfg)
     elif driver == "linkerhand_o6":
         device, mapper = build_linkerhand_o6(cfg)
+    elif driver == "rh56e2_modbus_tcp":
+        from teleopit.sim2real.hands.rh56e2 import build_rh56e2
+
+        device, mapper = build_rh56e2(cfg)
     else:
-        raise ValueError(f"Unsupported hands.driver={driver!r}; supported drivers: linkerhand_l6, linkerhand_o6")
+        raise ValueError(
+            f"Unsupported hands.driver={driver!r}; supported drivers: "
+            "linkerhand_l6, linkerhand_o6, rh56e2_modbus_tcp"
+        )
     return HandRuntime(device, mapper, open_commands=_open_commands_from_device(device))
 
 
