@@ -1,0 +1,4 @@
+left:
+  config: "../left/inspire_rh56e2_left.yaml"
+right:
+  config: "../right/inspire_rh56e2_right.yaml"
