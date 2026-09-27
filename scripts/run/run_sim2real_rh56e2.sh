@@ -20,10 +20,14 @@ for arg in "$@"; do
     exit 2
   fi
 done
+args=()
+if [[ -n "${PICO_ADVERTISE_IP:-}" ]]; then
+  args+=("input.bridge_advertise_ip=$PICO_ADVERTISE_IP")
+fi
 exec "$TELEOPIT_PYTHON" "$ROOT_DIR/scripts/run/run_sim2real.py" \
   --config-name pico4_sim2real_rh56e2 \
   controller.policy_path=ckpt/track_g1.onnx \
   "real_robot.network_interface=$NETWORK_INTERFACE" \
   "hands.rh56e2.left_host=$LEFT_HAND_IP" "hands.rh56e2.right_host=$RIGHT_HAND_IP" \
   "hands.rh56e2.port=${HAND_PORT:-6000}" \
-  "hands.rh56e2.write_enabled=$hand_write" "$@"
+  "hands.rh56e2.write_enabled=$hand_write" "${args[@]}" "$@"
