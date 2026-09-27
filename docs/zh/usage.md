@@ -1,6 +1,6 @@
 # G1 + RH56E2 使用
 
-这是 Teleopit fork，不再需要另一个 repro 仓库覆盖文件。设备 SDK 单独安装。
+设备 SDK 单独安装。
 先在本地主机仿真，再按 [部署说明](deployment.md) 准备 G1，最后进行操作员在场的真机验证。
 
 ## 1. 本地环境与安装
@@ -12,8 +12,6 @@ git clone --branch codex/rh56e2-public git@github.com:wz-automind/Teleopit.git T
 git clone --branch codex/sdk-extraction git@github.com:wz-automind/rh56e2-sdk.git rh56e2-sdk
 ```
 
-若同名目录已经存在，不重复 clone；先核对目录与分支。使用自定义 SSH 别名的机器可把
-`github.com` 替换成自己的别名，例如 `github-wz`。
 先在 SDK 目录按其安装文档构建 `dist/rh56e2_sdk-0.1.0-py3-none-any.whl`。
 另按 [外部模型准备](assets.md) 补齐 E2 模型；它们不随 GitHub 克隆或通用资产下载提供。
 
