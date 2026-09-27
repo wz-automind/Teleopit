@@ -7,6 +7,7 @@ import venv
 from pathlib import Path
 
 import pytest
+from packaging.requirements import Requirement
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -75,7 +76,7 @@ def installer_commands(tmp_path, *, fail_bootstrap=False):
         '#!' + sys.executable + '\n'
         'import json, sys\n'
         f'with open({str(log)!r}, "a") as stream: stream.write(json.dumps(sys.argv[1:]) + "\\n")\n'
-        f'if {fail_bootstrap!r} and "setuptools>=61.0" in sys.argv: sys.exit(17)\n'
+        f'if {fail_bootstrap!r} and any(arg.startswith("setuptools>=") for arg in sys.argv): sys.exit(17)\n'
     )
     interpreter.chmod(0o755)
     result = run('setup/install_rh56e2.sh', '--wheelhouse', str(wheelhouse),
@@ -87,7 +88,10 @@ def installer_commands(tmp_path, *, fail_bootstrap=False):
 def test_offline_installer_bootstraps_and_replaces_only_sdk(tmp_path):
     result, installs = installer_commands(tmp_path)
     assert result.returncode == 0, result.stderr
-    assert 'setuptools>=61.0' in installs[0]
+    backend = Requirement(next(arg for arg in installs[0] if arg.startswith('setuptools')))
+    # A pre-PEP-660 backend must not satisfy the editable-install bootstrap.
+    assert '63.4.3' not in backend.specifier
+    assert '64.0.0' in backend.specifier
     assert 'wheel' in installs[0]
     sdk_install = next(args for args in installs if any(arg.endswith('.whl') for arg in args))
     assert '--force-reinstall' in sdk_install

@@ -29,7 +29,7 @@
 
 **Files:** scripts/run/run_sim2real_rh56e2.sh, scripts/run/run_unitree_g1_rh56e2.sh, scripts/setup/install_rh56e2.sh, tests/test_rh56e2_launchers.py.
 
-**Interfaces:** PICO_ADVERTISE_IP supplies input.bridge_advertise_ip; explicit CLI overrides win. Offline --wheelhouse must bootstrap setuptools>=61.0 and wheel, replace only the SDK using --force-reinstall --no-deps, then install runtime dependencies and checkout.
+**Interfaces:** PICO_ADVERTISE_IP supplies input.bridge_advertise_ip; explicit CLI overrides win. Offline --wheelhouse must bootstrap setuptools>=64.0 and wheel, replace only the SDK using --force-reinstall --no-deps, then install runtime dependencies and checkout. Final review raised the original 61.0 floor to 64.0 for PEP 660 support.
 
 - [ ] Add parameterized config-only tests for both launchers (set, empty, CLI override).
 - [ ] Add subprocess-boundary installer tests checking actual emitted pip arguments, bootstrap order, and early exit. No real installs into the user's environment.

@@ -25,7 +25,7 @@ SDK 本体是纯 Python wheel，但 NumPy、MuJoCo、Torch、ONNX Runtime 等不
 可在该准备机器上，用相同 fork 源码运行：
 
 ```bash
-python -m pip wheel --wheel-dir wheelhouse . 'setuptools>=61.0' wheel 'pybind11>=2.10' \
+python -m pip wheel --wheel-dir wheelhouse . 'setuptools>=64.0' wheel 'pybind11>=2.10' \
   'somehand @ git+https://github.com/BotRunner64/somehand.git@f0a6b42e151ca10a6eec3e24c24c10cd13c40314' \
   'pico-bridge @ https://github.com/BotRunner64/pico-bridge/releases/download/v0.2.1/pico_bridge-0.2.1-py3-none-any.whl'
 cp /path/to/rh56e2_sdk-0.1.0-py3-none-any.whl wheelhouse/
@@ -71,7 +71,8 @@ bash scripts/setup/install_rh56e2.sh --wheelhouse "$HOME/rh56e2-wheelhouse"
 模型包解压也拒绝覆盖已有文件；仅解压自己刚生成并确认内容的包。
 创建 Conda 环境本身也需要包缓存/联网源；wheelhouse 只覆盖 pip 包，不包含 Miniforge 环境包。
 SDK 安装器只使用指定 wheelhouse，缺包会报名字，不回退到 GitHub 克隆。
-它先安装 `setuptools>=61.0` 和 `wheel`，再安装 SDK、somehand、pico-bridge 和本仓库。
+它先安装 `setuptools>=64.0` 和 `wheel`，再安装 SDK、somehand、pico-bridge 和本仓库。
+`64.0` 是这里可编辑安装所需的 PEP 660 后端下限，不能只准备旧版 setuptools。
 必须把构建工具的 wheel 一起准备好；只复制 SDK wheel 不够。
 安装器会替换指定的 SDK wheel，即使版本号仍为 `0.1.0`，也不会跳过旧包；
 强制重装仅作用于 SDK，不会强制重装其他依赖。运行前先停止使用该环境的程序。

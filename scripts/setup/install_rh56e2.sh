@@ -15,7 +15,7 @@ source "$ROOT_DIR/scripts/lib/conda_env.sh"
 require_teleopit_python
 # No VCS URLs or clone fallback: all wheels must match the target architecture.
 "$TELEOPIT_PYTHON" -m pip install --no-index --find-links "$wheelhouse" \
-  'setuptools>=61.0' wheel
+  'setuptools>=64.0' wheel
 # Replace a supplied SDK build even when its version is unchanged; leave other packages alone.
 "$TELEOPIT_PYTHON" -m pip install --no-index --find-links "$wheelhouse" \
   --force-reinstall --no-deps "$sdk_wheel"
