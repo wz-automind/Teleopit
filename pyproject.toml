@@ -40,6 +40,7 @@ rh56e2 = [
 dev = [
     "pytest",
     "pytest-cov",
+    "ruff>=0.8",
 ]
 sim2real = [
     "opencv-python",

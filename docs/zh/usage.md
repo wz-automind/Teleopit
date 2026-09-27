@@ -5,17 +5,25 @@
 
 ## 1. 本地环境与安装
 
-PR 合并前，在主机用 SSH 克隆公开集成分支和私有 SDK（后者要求账号获授权）：
+在主机用 SSH 克隆已合并的主分支和私有 SDK（后者要求账号获授权）：
 
 ```bash
-git clone --branch codex/rh56e2-public git@github.com:wz-automind/Teleopit.git Teleopit-rh56e2-fork
-git clone --branch codex/sdk-extraction git@github.com:wz-automind/rh56e2-sdk.git rh56e2-sdk
+git clone --branch master git@github.com:wz-automind/Teleopit.git Teleopit-rh56e2-fork
+git clone --branch main git@github.com:wz-automind/rh56e2-sdk.git rh56e2-sdk
 ```
 
-先在 SDK 目录按其安装文档构建 `dist/rh56e2_sdk-0.1.0-py3-none-any.whl`。
+先在 SDK 目录按其[安装文档](https://github.com/wz-automind/rh56e2-sdk/blob/main/docs/installation.md)
+构建 `dist/rh56e2_sdk-0.1.0-py3-none-any.whl`。
 另按 [外部模型准备](assets.md) 补齐 E2 模型；它们不随 GitHub 克隆或通用资产下载提供。
 
-默认 Miniforge 已安装，使用自己的项目目录：
+默认 Miniforge 已安装。**首次使用且还没有 `teleopit` 环境时**先执行：
+
+```bash
+source "$HOME/miniforge3/bin/activate"
+conda create -n teleopit python=3.10
+```
+
+已有环境直接激活，在自己的项目目录安装：
 
 ```bash
 source "$HOME/miniforge3/bin/activate" teleopit
@@ -27,13 +35,30 @@ python scripts/dev/check_rh56e2.py --profile sim
 ```
 
 SDK 安装使用获授权私有源码构建的本地 wheel；尚未在 PyPI 发布。
-首次环境可先用 `conda create -n teleopit python=3.10`。
-已经激活其他可用环境时不必重复激活；脚本也接受 `TELEOPIT_PYTHON=/absolute/path/to/python`。
-本地迁移工作区自带独立 `.venv`，可用 `source .venv/bin/activate`，没有改原 Conda 环境。
+若更新后的 SDK wheel 仍为 `0.1.0`，普通安装可能跳过它。
+停止占用 SDK 的程序后，在需要更新的环境执行（不重装其他依赖）：
 
-开发检查使用 `bash scripts/dev/validate.sh`。运行全套测试前把 SDK wheel 放到
-`dist/wheelhouse/`（只放 SDK，分发测试会验证其他运行依赖缺失时的报错）；
-本地迁移目录已准备好。该测试目录不等于实际部署使用的完整 ARM64 wheelhouse。
+```bash
+python -m pip install --force-reinstall --no-deps --no-index \
+  ../rh56e2-sdk/dist/rh56e2_sdk-0.1.0-py3-none-any.whl
+```
+
+已经激活其他可用环境时不必重复激活；脚本也接受 `TELEOPIT_PYTHON=/absolute/path/to/python`。
+全新克隆不包含 Conda/venv 环境、SDK wheel 或 E2 模型。
+
+只有修改代码或开发验证时才需要下面的命令，日常运行不用重复执行：
+
+```bash
+python -m pip install -e '.[dev]'
+mkdir -p dist/wheelhouse
+cp -i ../rh56e2-sdk/dist/rh56e2_sdk-0.1.0-py3-none-any.whl dist/wheelhouse/
+bash scripts/dev/validate.sh
+```
+
+`[dev]` 包含 pytest 和 Ruff；验证脚本依次做语法检查、全套测试和 E2 相关静态检查，
+不需要再重复运行 unittest。复制 SDK wheel 时已有同名文件会询问，确认是刚构建的版本再覆盖。
+`dist/wheelhouse/` **只放 SDK wheel**，分发测试会验证缺少构建工具时的报错；
+它不是部署 G1 使用的完整 ARM64 wheelhouse。全套测试还需要前面准备的运行模型和资源。
 
 ## 2. 先跑仿真
 
@@ -83,7 +108,9 @@ python scripts/dev/check_rh56e2.py --profile real --hardware \
 ```
 
 检查工具支持单手/双手，增加 `--tactile` 可只读检查 T1 全阵列。默认不联网，只查本地依赖。
-E2 手部默认 dry-run 禁写；SDK 自带单手/双手二维热力图入口，详见 SDK 文档。
+E2 手部默认 dry-run 禁写；单手/双手二维热力图的安装与命令见
+[SDK 触觉文档](https://github.com/wz-automind/rh56e2-sdk/blob/main/docs/tactile.md)，
+绘图环境另需 SDK 的 `[viz]` 可选依赖。Teleopit 不复制这些脚本，也不会自动启动热力图窗口。
 不要让多个调试程序同时争用手的 TCP 会话。
 
 ## 4. G1 与 E2 启动
@@ -101,6 +128,11 @@ NETWORK_INTERFACE=enp5s0 \
 LEFT_HAND_IP=192.168.123.210 RIGHT_HAND_IP=192.168.123.211 \
 bash scripts/run/run_sim2real_rh56e2.sh
 ```
+
+需要指定 PICO 发现地址时，在上面的环境变量中增加
+`PICO_ADVERTISE_IP=主机上PICO可访问的IP`（替换为实际地址，不要原样粘贴占位文字）。
+这是运行 Teleopit 的主机地址，不是 E2 地址；不设置时保留自动选择。
+主机与 G1 两种入口都接受此变量；显式传入的 `input.bridge_advertise_ip=...` 优先于环境变量。
 
 G1 内部运行时：
 

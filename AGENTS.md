@@ -12,6 +12,9 @@ Publish only the sanitized branch based directly on upstream; do not push the lo
 branch/history that contains E2 models. Keep model files local and ignored until redistribution
 permission is confirmed. See docs/zh/assets.md for required external resources.
 Hardware motion is not authorized. Offline tests are not hardware validation.
+Both E2 real launchers accept PICO_ADVERTISE_IP; explicit Hydra address overrides take precedence.
+The offline installer bootstraps build tools from the supplied wheelhouse and replaces only the SDK
+with --force-reinstall --no-deps. Keep these behaviors covered by config-only/subprocess tests.
 
 ## Project Overview
 

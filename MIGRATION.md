@@ -2,6 +2,10 @@
 
 ## GitHub 发布分支
 
+E2 集成已通过 PR #1 合入公开仓库 `wz-automind/Teleopit` 的 `master`。
+私有 SDK 使用 `wz-automind/rh56e2-sdk` 的 `main`；新克隆请按
+[使用说明](docs/zh/usage.md)，不再依赖下文提到的历史开发分支。
+
 `codex/rh56e2-public` 以原上游基线为父提交，重新收录集成代码、配置和文档；
 不继承含模型的本地 `codex/rh56e2-sdk-integration` 提交历史。
 后者与模型文件保留在本机，不推送到公开仓库。公开分支排除 E2 MJCF、URDF、网格和
@@ -28,7 +32,8 @@ E2 手部配置/MJCF/mesh 迁入本 fork，传递引用的 `inspire_dfq.yaml` �
 `_universal_common.yaml` 同步收录；实际 somehand loader + MuJoCo 从临时 cwd 验证路径。
 默认写入禁用、故障/温度门控、跟踪超时与 -1 保持语义不变。
 
-没有 GitHub fork/推送、G1 部署或真机动作。原部署可以继续使用，回退无需删除本目录。
+初次本地迁移验证时尚未进行 GitHub 发布、G1 部署或真机动作；代码此后已经发布合并。
+原部署可以继续使用，回退无需删除本目录。
 
 SDK wheel SHA256：`3838c1027b6a9794c1e88cdd29a1be4cb6f3e0ec307af3a331e2e170ffc2d552`。
 SDK 初次交付提交 `f4d308a`；后续审查修复以最终交接提交和重建 wheel 为准。
@@ -55,7 +60,8 @@ NaN/Infinity 及整数强制转换可能绕过运行时保护。已补先失败�
 
 审查暂不判断 T1 物理方向/覆盖/固件、ARM64 与原生桥、实时 PICO/G1 运动/停机安全，
 因为缺少目标设备测试且真机操作未获授权；不将软件测试解释为这些能力的验收。
-公开分发与资产许可核查同样延后，尚未发布。
+当时的代码发布准备尚未完成；此后仅发布了不含 E2 模型的集成代码。
+E2 模型的公开再分发许可仍未确认，模型文件继续排除在公开仓库之外。
 
 额外验证：从固定 somehand Git 提交生成干净 wheel，替换新隔离环境中的旧可编辑依赖；
 解压部署包到临时目录后单独安装 SDK / somehand / fork，22 项集成与资源测试通过。
