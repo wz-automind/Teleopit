@@ -4,6 +4,23 @@
 [中文文档](docs/zh/usage.md)。设备通信和 T1 触觉工具由私有仓库
 [rh56e2-sdk](https://github.com/wz-automind/rh56e2-sdk) 提供。
 
+只显示 Pico 驱动的左右 E2 三维模型，不加载 G1，也不需要 ONNX policy：
+
+```bash
+python scripts/run/run_rh56e2_sim.py
+```
+
+Pico 发现需要指定本机地址时增加
+`--bridge-advertise-ip 192.168.50.62`。G1 + E2 联合仿真仍使用原入口：
+
+```bash
+python scripts/run/run_sim.py \
+  --config-name pico4_sim_rh56e2 \
+  controller.policy_path=ckpt/track_g1.onnx
+```
+
+完整安装和运行说明见[中文文档](docs/zh/usage.md)。
+
 <p align="center">
   <img src="assets/teleopit.png" width="720" alt="Teleopit whole-body teleoperation demo">
 </p>

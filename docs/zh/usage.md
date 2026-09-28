@@ -33,12 +33,36 @@ assets/robots/unitree_g1/meshes/rh56e2/
 
 ## 2. 先跑仿真
 
-PICO 联机仿真：
+### 只显示双手 E2
+
+下面的命令只打开一个 MuJoCo 窗口，其中同时显示左右 E2。它直接使用 PICO
+手部追踪，不加载 G1，也不需要 ONNX policy：
 
 ```bash
 cd "$HOME/Teleopit"
 source "$HOME/miniforge3/bin/activate" teleopit
-python scripts/run/run_sim.py --config-name pico4_sim_rh56e2
+python scripts/run/run_rh56e2_sim.py
+```
+
+PICO 发现需要指定运行 Teleopit 的机器地址时使用：
+
+```bash
+python scripts/run/run_rh56e2_sim.py \
+  --bridge-advertise-ip 192.168.50.62
+```
+
+关闭 MuJoCo 窗口或按 `Ctrl+C` 即可退出。这个入口只运行仿真，不会连接或
+写入真实 E2。
+
+### G1 + E2 联合仿真
+
+同时显示 G1 和左右 E2 时仍使用原来的仿真入口，并且必须提供 G1 的 ONNX
+policy：
+
+```bash
+python scripts/run/run_sim.py \
+  --config-name pico4_sim_rh56e2 \
+  controller.policy_path=ckpt/track_g1.onnx
 ```
 
 没有 PICO 时可以用 BVH 做 20 步无窗口检查：
