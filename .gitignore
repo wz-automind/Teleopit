@@ -105,6 +105,7 @@ data/modelscope_upload/
 # Codex local workspace state
 .codex
 .omx/
+.worktrees/
 third_party/g1_bridge_sdk/thirdparty/
 
 # RH56E2 models remain local until redistribution permission is confirmed.
