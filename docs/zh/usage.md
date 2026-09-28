@@ -1,19 +1,17 @@
 # G1 + RH56E2 使用
 
-本 fork 只在 Teleopit 上增加 RH56E2 所需的仿真、真机配置和启动入口。
-设备通信及 T1 触觉读取由独立私有仓库 `rh56e2-sdk` 提供。
 
 ## 1. 安装
 
-默认主机已经安装 Miniforge：
+默认主机已经安装 Miniconda，G1安装Miniforge：
 
 ```bash
 git clone git@github.com:wz-automind/Teleopit.git
 git clone git@github.com:wz-automind/rh56e2-sdk.git
 
-source "$HOME/miniforge3/bin/activate"
+source "$HOME/miniconda3/bin/activate"
 conda create -n teleopit python=3.10
-source "$HOME/miniforge3/bin/activate" teleopit
+source "$HOME/miniconda3/bin/activate" teleopit
 
 python -m pip install -e "$HOME/rh56e2-sdk"
 cd "$HOME/Teleopit"
@@ -40,7 +38,7 @@ assets/robots/unitree_g1/meshes/rh56e2/
 
 ```bash
 cd "$HOME/Teleopit"
-source "$HOME/miniforge3/bin/activate" teleopit
+source "$HOME/miniconda3/bin/activate" teleopit
 python scripts/run/run_rh56e2_sim.py
 ```
 
@@ -68,11 +66,26 @@ python scripts/run/run_sim.py \
 没有 PICO 时可以用 BVH 做 20 步无窗口检查：
 
 ```bash
-python scripts/run/run_sim.py --config-name pico4_sim_rh56e2 \
+python scripts/run/run_sim.py \
+  --config-name pico4_sim_rh56e2 \
   input=bvh \
   input.bvh_file=data/sample_bvh/aiming1_subject1.bvh \
   controller.policy_path=ckpt/track_g1.onnx \
-  viewers=none num_steps=20 sim_hands.enabled=true
+  viewers=none \
+  num_steps=20 \
+  sim_hands.enabled=true
+```
+想打开MuJoCo窗口查看BVH动作，可以运行：
+
+```bash
+python scripts/run/run_sim.py \
+  --config-name pico4_sim_rh56e2 \
+  input=bvh \
+  input.bvh_file=data/sample_bvh/aiming1_subject1.bvh \
+  controller.policy_path=ckpt/track_g1.onnx \
+  viewers=sim2sim \
+  num_steps=0 \
+  sim_hands.enabled=true
 ```
 
 ## 3. 确认 G1、网卡和 E2 端口
@@ -114,7 +127,7 @@ python scripts/dev/check_rh56e2.py --profile real --hardware \
 
 ```bash
 cd "$HOME/Teleopit"
-source "$HOME/miniforge3/bin/activate" teleopit
+source "$HOME/miniconda3/bin/activate" teleopit
 
 ENABLE_G1_REAL=YES ENABLE_RH56E2_WRITES=YES \
 NETWORK_INTERFACE=enp5s0 \
