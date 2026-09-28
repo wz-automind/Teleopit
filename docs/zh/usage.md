@@ -42,12 +42,6 @@ source "$HOME/miniconda3/bin/activate" teleopit
 python scripts/run/run_rh56e2_sim.py
 ```
 
-PICO 发现需要指定运行 Teleopit 的机器地址时使用：
-
-```bash
-python scripts/run/run_rh56e2_sim.py \
-  --bridge-advertise-ip 192.168.50.62
-```
 
 关闭 MuJoCo 窗口或按 `Ctrl+C` 即可退出。这个入口只运行仿真，不会连接或
 写入真实 E2。
