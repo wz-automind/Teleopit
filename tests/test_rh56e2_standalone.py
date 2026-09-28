@@ -414,10 +414,21 @@ def test_build_runtime_hides_axes_before_creating_bihand_window() -> None:
             )
 
     class SinkFactory:
-        models = ()
+        final_model = None
 
         def __init__(self, left_model, right_model) -> None:
-            self.__class__.models = (left_model.model, right_model.model)
+            del left_model, right_model
+            model = mujoco.MjModel.from_xml_string(
+                """
+<mujoco>
+  <worldbody>
+    <geom name="axis" type="cylinder" size="0.004 0.075" rgba="0 1 0 1"/>
+  </worldbody>
+</mujoco>
+"""
+            )
+            self._visualizer = SimpleNamespace(model=model)
+            self.__class__.final_model = model
 
     launcher.build_runtime(
         args,
@@ -426,7 +437,8 @@ def test_build_runtime_hides_axes_before_creating_bihand_window() -> None:
         sink_cls=SinkFactory,
     )
 
-    assert [model.geom("axis").rgba[3] for model in SinkFactory.models] == [0.0, 0.0]
+    assert SinkFactory.final_model is not None
+    assert SinkFactory.final_model.geom("axis").rgba[3] == 0.0
 
 
 def test_build_runtime_closes_provider_if_sink_creation_fails() -> None:

@@ -89,6 +89,10 @@ def build_runtime(
             engine.left_engine.hand_model,
             engine.right_engine.hand_model,
         )
+        visualizer = getattr(sink, "_visualizer", None)
+        combined_model = getattr(visualizer, "model", None)
+        if combined_model is not None:
+            hide_rh56e2_coordinate_axes(combined_model)
     except BaseException:
         provider.close()
         raise
