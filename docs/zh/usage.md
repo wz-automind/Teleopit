@@ -128,8 +128,6 @@ LEFT_HAND_IP=192.168.123.210 RIGHT_HAND_IP=192.168.123.211 \
 bash scripts/run/run_sim2real_rh56e2.sh
 ```
 
-如果 PICO 需要指定发现地址，在同一命令增加
-`PICO_ADVERTISE_IP=<运行Teleopit的机器上PICO可访问的IP>`。
 
 G1 内运行使用同一个脚本，只需把网卡改为 `eth1`：
 
