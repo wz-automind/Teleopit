@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib.util
 import sys
 import time
 import unittest
@@ -7,6 +8,14 @@ from unittest.mock import patch
 
 
 class TeleopitDelegationTests(unittest.TestCase):
+    def require_sdk(self) -> None:
+        try:
+            available = importlib.util.find_spec("rh56e2_sdk") is not None
+        except ModuleNotFoundError:
+            available = False
+        if not available:
+            self.skipTest("private RH56E2 SDK is not installed")
+
     def test_simulation_cfg_preserves_optional_hand_section(self):
         from teleopit.runtime.factory import build_simulation_cfg
 
@@ -62,6 +71,7 @@ assert not build_hand_runtime({'hands': {'enabled': False}}).enabled
         self.assertEqual(result.returncode, 0, result.stderr)
 
     def test_real_sdk_blocks_faults_and_overtemperature_and_preserves_hold(self):
+        self.require_sdk()
         from rh56e2_sdk import DeviceSafetyError, RH56E2Hand
         from rh56e2_sdk.protocol import FAULT_ACT
 
@@ -111,6 +121,7 @@ assert not build_hand_runtime({'hands': {'enabled': False}}).enabled
         self.assertEqual(raw.writes, [(1486, (-1,) * 6)])
 
     def test_tracking_timeout_holds_without_engine_call(self):
+        self.require_sdk()
         from types import SimpleNamespace
 
         from teleopit.sim2real.hands.rh56e2 import (
@@ -149,6 +160,7 @@ assert not build_hand_runtime({'hands': {'enabled': False}}).enabled
         return Rh56e2Device(config)
 
     def test_send_pose_delegates_to_sdk_hand_positions(self) -> None:
+        self.require_sdk()
         from rh56e2_sdk import RH56E2Telemetry
 
         from teleopit.sim2real.hands.rh56e2 import Rh56e2Device, parse_rh56e2_config
@@ -181,12 +193,14 @@ assert not build_hand_runtime({'hands': {'enabled': False}}).enabled
         )
 
     def test_invalid_pose_is_rejected_even_when_writes_are_disabled(self) -> None:
+        self.require_sdk()
         device = self._device(write_enabled=False)
 
         with self.assertRaises(TypeError):
             device.send_pose("left", (500.5,) * 6)
 
     def test_invalid_pose_is_rejected_before_rate_limit_suppression(self) -> None:
+        self.require_sdk()
         device = self._device(write_enabled=True)
         device._last_write_s["left"] = time.monotonic()
 
@@ -194,6 +208,7 @@ assert not build_hand_runtime({'hands': {'enabled': False}}).enabled
             device.send_pose("left", (500.5,) * 6)
 
     def test_invalid_pose_is_rejected_before_minimum_change_suppression(self) -> None:
+        self.require_sdk()
         device = self._device(write_enabled=True)
         device._last_pose["left"] = (500,) * 6
 

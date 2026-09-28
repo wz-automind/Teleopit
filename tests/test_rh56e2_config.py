@@ -2,6 +2,10 @@ from __future__ import annotations
 
 import unittest
 
+import pytest
+
+pytest.importorskip("rh56e2_sdk", reason="private RH56E2 SDK is not installed")
+
 from teleopit.sim2real.hands.rh56e2 import (
     parse_rh56e2_config,
     radians_to_raw,
@@ -53,7 +57,6 @@ class ConfigTests(unittest.TestCase):
             "hands.rate_hz",
             "hands.frame_timeout_s",
             "hands.rh56e2.timeout_s",
-            "hands.rh56e2.health_poll_interval_s",
             "hands.somehand.rate_hz",
         )
         for path in paths:

@@ -23,7 +23,6 @@ hands:
     write_enabled: false
     min_change: 3
     max_temperature_c: 70
-    health_poll_interval_s: 0.5
     open_on_failure: false
     open_on_shutdown: false
 

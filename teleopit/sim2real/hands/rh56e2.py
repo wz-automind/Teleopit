@@ -68,7 +68,6 @@ class Rh56e2Config:
     min_change: int
     write_enabled: bool
     max_temperature_c: int
-    health_poll_interval_s: float
     open_on_failure: bool
     open_on_shutdown: bool
     open_pose: tuple[int, ...]
@@ -141,9 +140,6 @@ def parse_rh56e2_config(cfg: Any) -> Rh56e2Config:
         ),
         max_temperature_c=_temperature_limit(
             cfg_get(hand_cfg, "max_temperature_c", 70)
-        ),
-        health_poll_interval_s=_positive_float(
-            cfg_get(hand_cfg, "health_poll_interval_s", 0.5), "health_poll_interval_s"
         ),
         open_on_failure=_boolean(
             cfg_get(hand_cfg, "open_on_failure", False), "open_on_failure"

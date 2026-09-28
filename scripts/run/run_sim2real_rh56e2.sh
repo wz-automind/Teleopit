@@ -14,8 +14,12 @@ hand_write=false
 if [[ "${ENABLE_RH56E2_WRITES:-}" == YES ]]; then hand_write=true; fi
 cd "$ROOT_DIR"
 for arg in "$@"; do
-  if [[ "$arg" == *hands.rh56e2.write_enabled* ]]; then
-    echo 'Use ENABLE_RH56E2_WRITES=YES to enable hand writes, not a Hydra override.' >&2
+  key="${arg%%=*}"
+  key="${key#\~}"
+  key="${key#+}"
+  key="${key#+}"
+  if [[ "$key" == hands || "$key" == hands.rh56e2 || "$key" == hands.rh56e2.write_enabled ]]; then
+    echo 'Use ENABLE_RH56E2_WRITES=YES to control hand writes; hands/RH56E2 write-gate overrides are rejected.' >&2
     exit 2
   fi
 done

@@ -70,6 +70,43 @@ def test_real_launcher_requires_g1_interlock_and_defaults_to_hand_read_only():
 
 
 @pytest.mark.parametrize(
+    "override",
+    [
+        "hands.rh56e2={write_enabled:true}",
+        "hands={rh56e2:{write_enabled:true}}",
+    ],
+)
+def test_real_launcher_rejects_structured_write_gate_overrides(override):
+    result = run(
+        "run/run_sim2real_rh56e2.sh",
+        override,
+        "--cfg",
+        "job",
+        ENABLE_G1_REAL="YES",
+        LEFT_HAND_IP="192.0.2.1",
+        RIGHT_HAND_IP="192.0.2.2",
+        NETWORK_INTERFACE="testnic",
+    )
+    assert result.returncode != 0
+    assert "ENABLE_RH56E2_WRITES" in result.stderr
+
+
+def test_real_launcher_write_environment_gate_is_authoritative():
+    result = run(
+        "run/run_sim2real_rh56e2.sh",
+        "--cfg",
+        "job",
+        ENABLE_G1_REAL="YES",
+        ENABLE_RH56E2_WRITES="YES",
+        LEFT_HAND_IP="192.0.2.1",
+        RIGHT_HAND_IP="192.0.2.2",
+        NETWORK_INTERFACE="testnic",
+    )
+    assert result.returncode == 0, result.stderr
+    assert "write_enabled: true" in result.stdout
+
+
+@pytest.mark.parametrize(
     "address,override,expected",
     [
         ("192.0.2.3", None, "192.0.2.3"),

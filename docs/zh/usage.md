@@ -31,12 +31,6 @@ assets/robots/unitree_g1/g1_29dof_rh56e2.xml
 assets/robots/unitree_g1/meshes/rh56e2/
 ```
 
-真机还需要 `g1_bridge_sdk`：
-
-```bash
-bash scripts/setup/setup_g1_bridge.sh
-```
-
 ## 2. 先跑仿真
 
 PICO 联机仿真：
@@ -90,6 +84,7 @@ python scripts/dev/check_rh56e2.py --profile real --hardware \
 
 下面的命令会控制 G1 和双手。必须先准备支撑、急停、遥控器接管和安全空间。
 `ENABLE_G1_REAL=YES` 允许身体控制；`ENABLE_RH56E2_WRITES=YES` 允许手部写入。
+真机环境首次使用时先执行 `bash scripts/setup/setup_g1_bridge.sh`。
 
 主机通过有线网卡运行：
 
@@ -126,8 +121,8 @@ Git 历史和录制数据：
 
 ```bash
 cd "$HOME"
-tar --exclude='Teleopit/.git' \
-    --exclude='Teleopit/recordings' \
+tar --exclude-vcs \
+    --exclude='Teleopit/data/recordings' \
     --exclude='*/__pycache__' \
     --exclude='*.pyc' \
     -czf Teleopit.tar.gz Teleopit
