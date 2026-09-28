@@ -58,8 +58,7 @@ python scripts/run/run_rh56e2_sim.py \
 policy：
 
 ```bash
-python scripts/run/run_sim.py \
-  --config-name pico4_sim_rh56e2 \
+python scripts/run/run_sim.py --config-name pico4_sim_rh56e2 \
   controller.policy_path=ckpt/track_g1.onnx
 ```
 
