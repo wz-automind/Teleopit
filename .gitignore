@@ -106,6 +106,7 @@ data/modelscope_upload/
 .codex
 .omx/
 .superpowers/
+.worktrees/
 third_party/g1_bridge_sdk/thirdparty/
 
 # RH56E2 models remain local until redistribution permission is confirmed.
