@@ -1,6 +1,6 @@
 # RH56E2 支持
 
-本 fork 增加 G1 + 因时 RH56E2 的仿真和真机配置，使用方法见
+Teleopit增加 G1 + 因时 RH56E2 的仿真和真机配置，使用方法见
 [中文文档](docs/zh/usage.md)。设备通信和 T1 触觉工具由私有仓库
 [rh56e2-sdk](https://github.com/wz-automind/rh56e2-sdk) 提供。
 
