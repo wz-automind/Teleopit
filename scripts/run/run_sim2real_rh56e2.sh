@@ -9,8 +9,7 @@ if [[ -z "${NETWORK_INTERFACE:-}" || -z "${LEFT_HAND_IP:-}" || -z "${RIGHT_HAND_
   echo 'Set NETWORK_INTERFACE and two distinct LEFT_HAND_IP / RIGHT_HAND_IP values.' >&2
   exit 2
 fi
-source "$ROOT_DIR/scripts/lib/conda_env.sh"
-require_teleopit_python
+TELEOPIT_PYTHON="${TELEOPIT_PYTHON:-python}"
 hand_write=false
 if [[ "${ENABLE_RH56E2_WRITES:-}" == YES ]]; then hand_write=true; fi
 cd "$ROOT_DIR"

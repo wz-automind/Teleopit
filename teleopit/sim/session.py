@@ -47,6 +47,18 @@ Float64Array = NDArray[np.float64]
 _logger = logging.getLogger(__name__)
 
 
+def _build_sim_hands(loop: SimulationLoop, input_provider: InputProvider) -> object | None:
+    if not bool(loop._try_get_cfg("sim_hands.enabled", False)):
+        return None
+    from teleopit.sim.rh56e2_hands import Rh56e2SimHands
+
+    return Rh56e2SimHands(
+        robot=loop.robot,
+        input_provider=input_provider,
+        cfg=loop.cfg,
+    )
+
+
 class SimLoopSession:
     """Encapsulates per-run state for a single simulation session.
 
@@ -68,6 +80,7 @@ class SimLoopSession:
         self._loop = loop
         self._input_provider = input_provider
         self._retargeter = retargeter
+        self._sim_hands = _build_sim_hands(loop, input_provider)
 
         # Convenience aliases for heavily-used loop attributes
         self._step_runner = loop._step_runner
@@ -681,6 +694,8 @@ class SimLoopSession:
                     raise ValueError(f"Controller returned {action.shape[0]} actions, expected {loop._num_actions}")
 
                 target_dof_pos = self._step_runner.compute_target_dof_pos(action)
+                if self._sim_hands is not None:
+                    self._sim_hands.tick()
                 torque, final_state = self._step_runner.apply_control(target_dof_pos)
                 loop._publisher.publish(preparation.mimic_obs, action, final_state)
                 self._viewer_manager.write_sim2sim(loop.robot)

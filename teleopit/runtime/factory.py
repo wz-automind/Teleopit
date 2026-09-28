@@ -59,6 +59,7 @@ def build_simulation_cfg(cfg: Any) -> dict[str, object]:
         "keyboard": {
             "enabled": bool(cfg_get(realtime_keyboard_cfg, "enabled", False)),
         },
+        "sim_hands": cfg_get(cfg, "sim_hands", {}) or {},
     }
 
 

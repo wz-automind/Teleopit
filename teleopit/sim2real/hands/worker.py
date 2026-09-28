@@ -13,7 +13,13 @@ logger = logging.getLogger(__name__)
 
 
 class HandRuntime:
-    def __init__(self, device: HandDevice, mapper: HandInputMapper, *, open_commands: Sequence[HandPoseCommand] = ()):
+    def __init__(
+        self,
+        device: HandDevice,
+        mapper: HandInputMapper,
+        *,
+        open_commands: Sequence[HandPoseCommand] = (),
+    ):
         self._device = device
         self._mapper = mapper
         self.enabled = True
@@ -34,7 +40,14 @@ class HandRuntime:
     def get_state(self, side: str) -> tuple[float, ...]:
         return self._device.get_state(side)
 
-    def tick(self, *, controller_snapshot: object | None, hand_snapshot: object | None, active: bool, now_s: float | None = None) -> tuple[HandPoseCommand, ...]:
+    def tick(
+        self,
+        *,
+        controller_snapshot: object | None,
+        hand_snapshot: object | None,
+        active: bool,
+        now_s: float | None = None,
+    ) -> tuple[HandPoseCommand, ...]:
         if self._failed:
             return ()
         now = time.monotonic() if now_s is None else float(now_s)
@@ -68,7 +81,10 @@ class HandRuntime:
         return self._open_pose_commands("shutdown")
 
     def _open_pose_commands(self, reason: str) -> tuple[HandPoseCommand, ...]:
-        return tuple(HandPoseCommand(command.side, command.pose, True, reason) for command in self._open_commands)
+        return tuple(
+            HandPoseCommand(command.side, command.pose, True, reason)
+            for command in self._open_commands
+        )
 
 
 class DisabledHandRuntime:
@@ -81,7 +97,14 @@ class DisabledHandRuntime:
         del side
         raise RuntimeError("Dexterous hand control is disabled")
 
-    def tick(self, *, controller_snapshot: object | None, hand_snapshot: object | None, active: bool, now_s: float | None = None) -> tuple[HandPoseCommand, ...]:
+    def tick(
+        self,
+        *,
+        controller_snapshot: object | None,
+        hand_snapshot: object | None,
+        active: bool,
+        now_s: float | None = None,
+    ) -> tuple[HandPoseCommand, ...]:
         del controller_snapshot, hand_snapshot, active, now_s
         return ()
 

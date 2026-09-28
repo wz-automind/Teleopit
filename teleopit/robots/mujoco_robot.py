@@ -107,6 +107,19 @@ class MuJoCoRobot:
 
         # Robot parameters — all from config
         self._num_actions = int(cfg.num_actions)
+        if self.model.nu < self._num_actions:
+            raise ValueError(
+                f"MuJoCo model has {self.model.nu} actuators, fewer than "
+                f"num_actions={self._num_actions}"
+            )
+        self._policy_qpos_indices = np.empty(self._num_actions, dtype=np.int32)
+        self._policy_dof_indices = np.empty(self._num_actions, dtype=np.int32)
+        for actuator_id in range(self._num_actions):
+            joint_id = int(self.model.actuator_trnid[actuator_id][0])
+            if joint_id < 0:
+                raise ValueError(f"Policy actuator {actuator_id} is not joint-driven")
+            self._policy_qpos_indices[actuator_id] = int(self.model.jnt_qposadr[joint_id])
+            self._policy_dof_indices[actuator_id] = int(self.model.jnt_dofadr[joint_id])
         self._kps = np.array(cfg.kps, dtype=np.float64)
         self._kds = np.array(cfg.kds, dtype=np.float64)
         self._default_dof_pos = np.array(cfg.default_angles, dtype=np.float64)
@@ -175,9 +188,8 @@ class MuJoCoRobot:
 
     def get_state(self) -> RobotState:
         """Extract current robot state from MuJoCo data."""
-        n = self._num_actions
-        dof_pos = self.data.qpos[7 : 7 + n].copy()
-        dof_vel = self.data.qvel[6 : 6 + n].copy()
+        dof_pos = self.data.qpos[self._policy_qpos_indices].copy()
+        dof_vel = self.data.qvel[self._policy_dof_indices].copy()
         base_pos = self.data.qpos[0:3].copy()
         quat = self.data.qpos[3:7].copy()
 
@@ -232,8 +244,19 @@ class MuJoCoRobot:
         """Reset simulation to default or specified qpos."""
         mujoco.mj_resetData(self.model, self.data)
         if qpos is not None:
-            self.data.qpos[: len(qpos)] = qpos
+            qpos_arr = np.asarray(qpos, dtype=np.float64).reshape(-1)
+            if qpos_arr.shape[0] == self.model.nq:
+                self.data.qpos[:] = qpos_arr
+            elif qpos_arr.shape[0] == 7 + self._num_actions:
+                self.data.qpos[:7] = qpos_arr[:7]
+                self.data.qpos[self._policy_qpos_indices] = qpos_arr[7:]
+            else:
+                raise ValueError(
+                    f"reset qpos length must be model.nq={self.model.nq} or "
+                    f"7+num_actions={7 + self._num_actions}, got {qpos_arr.shape[0]}"
+                )
         else:
-            self.data.qpos[: len(self._mujoco_default_qpos)] = self._mujoco_default_qpos
+            self.data.qpos[:7] = self._mujoco_default_qpos[:7]
+            self.data.qpos[self._policy_qpos_indices] = self._mujoco_default_qpos[7:]
         self.data.qvel[:] = 0
         mujoco.mj_forward(self.model, self.data)
