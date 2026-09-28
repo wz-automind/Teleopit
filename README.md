@@ -11,7 +11,8 @@ python scripts/run/run_rh56e2_sim.py
 ```
 
 Pico 发现需要指定本机地址时增加
-`--bridge-advertise-ip 192.168.50.62`。G1 + E2 联合仿真仍使用原入口：
+`--bridge-advertise-ip 192.168.50.62`。
+G1 + E2 联合仿真：
 
 ```bash
 python scripts/run/run_sim.py \
