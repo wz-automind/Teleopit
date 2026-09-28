@@ -9,6 +9,65 @@ import multiprocessing as mp
 import time
 
 
+def hide_rh56e2_coordinate_axes(model: object) -> int:
+    """Hide the RGB root-frame geoms embedded in RH56E2 MJCF assets."""
+    import mujoco
+    import numpy as np
+
+    axis_colors = np.asarray(
+        ((1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0)),
+        dtype=np.float32,
+    )
+    hidden = 0
+    for geom_id in range(int(model.ngeom)):
+        color = np.asarray(model.geom_rgba[geom_id, :3], dtype=np.float32)
+        if not np.any(np.all(np.isclose(axis_colors, color, atol=1e-6), axis=1)):
+            continue
+
+        geom_type = int(model.geom_type[geom_id])
+        size = np.asarray(model.geom_size[geom_id], dtype=np.float64)
+        is_axis_line = (
+            geom_type == int(mujoco.mjtGeom.mjGEOM_CYLINDER)
+            and np.allclose(size[:2], (0.004, 0.075), atol=1e-6)
+        )
+        is_axis_endpoint = (
+            geom_type == int(mujoco.mjtGeom.mjGEOM_SPHERE)
+            and np.isclose(size[0], 0.015, atol=1e-6)
+        )
+        if is_axis_line or is_axis_endpoint:
+            model.geom_rgba[geom_id, 3] = 0.0
+            hidden += 1
+    return hidden
+
+
+def load_robot_viewer_model(xml_path: str, *, title: str = "") -> object:
+    """Load a viewer model and suppress RH56E2's embedded debug frame."""
+    import os
+    import re
+
+    import mujoco
+
+    if title:
+        with open(xml_path) as file:
+            xml_str = file.read()
+        xml_str = re.sub(
+            r'<mujoco\s+model="[^"]*"',
+            f'<mujoco model="{title}"',
+            xml_str,
+        )
+        previous_cwd = os.getcwd()
+        try:
+            os.chdir(os.path.dirname(os.path.abspath(xml_path)))
+            model = mujoco.MjModel.from_xml_string(xml_str)
+        finally:
+            os.chdir(previous_cwd)
+    else:
+        model = mujoco.MjModel.from_xml_path(xml_path)
+
+    hide_rh56e2_coordinate_axes(model)
+    return model
+
+
 def robot_viewer_proc(
     xml_path: str,
     qpos_arr: mp.Array,
@@ -29,18 +88,8 @@ def robot_viewer_proc(
     import mujoco
     import mujoco.viewer
     import numpy as np
-    import os
-    import re
-
-    # Set window title via model name and position via GLFW hints
-    if title:
-        with open(xml_path) as f:
-            xml_str = f.read()
-        xml_str = re.sub(r'<mujoco\s+model="[^"]*"', f'<mujoco model="{title}"', xml_str)
-        os.chdir(os.path.dirname(os.path.abspath(xml_path)))
-        model = mujoco.MjModel.from_xml_string(xml_str)
-    else:
-        model = mujoco.MjModel.from_xml_path(xml_path)
+    # Set window title via model name and hide RH56E2's debug frame.
+    model = load_robot_viewer_model(xml_path, title=title)
     data = mujoco.MjData(model)
 
     left_foot_id = -1
@@ -182,17 +231,7 @@ def camera_viewer_proc(
     import mujoco
     import mujoco.viewer
     import numpy as np
-    import os
-    import re
-
-    if title:
-        with open(xml_path) as f:
-            xml_str = f.read()
-        xml_str = re.sub(r'<mujoco\s+model="[^"]*"', f'<mujoco model="{title}"', xml_str)
-        os.chdir(os.path.dirname(os.path.abspath(xml_path)))
-        model = mujoco.MjModel.from_xml_string(xml_str)
-    else:
-        model = mujoco.MjModel.from_xml_path(xml_path)
+    model = load_robot_viewer_model(xml_path, title=title)
     camera_id = mujoco.mj_name2id(model, mujoco.mjtObj.mjOBJ_CAMERA, camera_name)
     if camera_id < 0:
         raise ValueError(f"Camera '{camera_name}' not found in MuJoCo XML: {xml_path}")

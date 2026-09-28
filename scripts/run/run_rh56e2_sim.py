@@ -4,9 +4,9 @@
 from __future__ import annotations
 
 import argparse
+from collections.abc import Sequence
 from pathlib import Path
-from typing import Any, Sequence
-
+from typing import Any
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CONFIG = Path(
@@ -68,6 +68,12 @@ def build_runtime(
 
     config_path = resolve_config_path(args.config)
     engine = engine_cls.from_config_path(str(config_path))
+    from teleopit.sim.viewer_subprocess import hide_rh56e2_coordinate_axes
+
+    for hand_engine in (engine.left_engine, engine.right_engine):
+        model = getattr(hand_engine.hand_model, "model", None)
+        if model is not None:
+            hide_rh56e2_coordinate_axes(model)
     provider = provider_cls(
         timeout=args.timeout,
         pause_button=None,

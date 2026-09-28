@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 import importlib.util
-from pathlib import Path
 import subprocess
 import sys
+from pathlib import Path
 from types import SimpleNamespace
 
+import mujoco
 import numpy as np
 import pytest
 
@@ -15,9 +16,61 @@ from teleopit.sim.rh56e2_standalone import (
     snapshot_to_bihand_frame,
 )
 
-
 ROOT = Path(__file__).resolve().parents[1]
 LAUNCHER = ROOT / "scripts/run/run_rh56e2_sim.py"
+
+
+def test_rh56e2_coordinate_axes_are_hidden_without_hiding_tip_markers() -> None:
+    from teleopit.sim import viewer_subprocess
+
+    hide_axes = getattr(viewer_subprocess, "hide_rh56e2_coordinate_axes", None)
+    assert callable(hide_axes), "RH56E2 coordinate-axis hiding is not implemented"
+
+    model = mujoco.MjModel.from_xml_string(
+        """
+<mujoco>
+  <worldbody>
+    <body>
+      <geom type="cylinder" size="0.004 0.075" rgba="1 0 0 1"/>
+      <geom type="sphere" size="0.015" rgba="1 0 0 1"/>
+      <geom type="cylinder" size="0.004 0.075" rgba="0 1 0 1"/>
+      <geom type="sphere" size="0.015" rgba="0 1 0 1"/>
+      <geom type="cylinder" size="0.004 0.075" rgba="0 0 1 1"/>
+      <geom type="sphere" size="0.015" rgba="0 0 1 1"/>
+      <geom name="finger_tip_marker" type="sphere" size="0.005" rgba="1 0 0 1"/>
+    </body>
+  </worldbody>
+</mujoco>
+"""
+    )
+
+    assert hide_axes(model) == 6
+    np.testing.assert_array_equal(model.geom_rgba[:6, 3], np.zeros(6))
+    assert model.geom("finger_tip_marker").rgba[3] == 1.0
+
+
+def test_robot_viewer_model_loader_hides_rh56e2_axes(tmp_path) -> None:
+    from teleopit.sim import viewer_subprocess
+
+    load_model = getattr(viewer_subprocess, "load_robot_viewer_model", None)
+    assert callable(load_model), "robot viewer does not use an axis-hiding loader"
+
+    xml_path = tmp_path / "hands.xml"
+    xml_path.write_text(
+        """
+<mujoco model="hands">
+  <worldbody>
+    <geom name="axis" type="cylinder" size="0.004 0.075" rgba="1 0 0 1"/>
+    <geom name="hand" type="sphere" size="0.02" rgba="1 1 1 1"/>
+  </worldbody>
+</mujoco>
+"""
+    )
+
+    model = load_model(str(xml_path), title="Sim2Sim")
+
+    assert model.geom("axis").rgba[3] == 0.0
+    assert model.geom("hand").rgba[3] == 1.0
 
 
 def _load_launcher():
@@ -334,6 +387,46 @@ def test_build_runtime_passes_bridge_network_options() -> None:
     assert runtime.provider is provider
     assert runtime.first_frame_timeout_s == 12.5
     assert _SinkFactory.calls == [("left-model", "right-model", {})]
+
+
+def test_build_runtime_hides_axes_before_creating_bihand_window() -> None:
+    launcher = _load_launcher()
+    args = launcher.build_parser().parse_args([])
+
+    def hand_model():
+        model = mujoco.MjModel.from_xml_string(
+            """
+<mujoco>
+  <worldbody>
+    <geom name="axis" type="cylinder" size="0.004 0.075" rgba="0 1 0 1"/>
+  </worldbody>
+</mujoco>
+"""
+        )
+        return SimpleNamespace(model=model)
+
+    class EngineFactory:
+        @classmethod
+        def from_config_path(cls, _path: str):
+            return SimpleNamespace(
+                left_engine=SimpleNamespace(hand_model=hand_model()),
+                right_engine=SimpleNamespace(hand_model=hand_model()),
+            )
+
+    class SinkFactory:
+        models = ()
+
+        def __init__(self, left_model, right_model) -> None:
+            self.__class__.models = (left_model.model, right_model.model)
+
+    launcher.build_runtime(
+        args,
+        provider_cls=_ProviderFactory,
+        engine_cls=EngineFactory,
+        sink_cls=SinkFactory,
+    )
+
+    assert [model.geom("axis").rgba[3] for model in SinkFactory.models] == [0.0, 0.0]
 
 
 def test_build_runtime_closes_provider_if_sink_creation_fails() -> None:
