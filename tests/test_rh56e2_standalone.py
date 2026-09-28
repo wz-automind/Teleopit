@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import importlib.util
+from pathlib import Path
+import subprocess
+import sys
 from types import SimpleNamespace
 
 import numpy as np
@@ -10,6 +14,18 @@ from teleopit.sim.rh56e2_standalone import (
     Rh56e2StandaloneRuntime,
     snapshot_to_bihand_frame,
 )
+
+
+ROOT = Path(__file__).resolve().parents[1]
+LAUNCHER = ROOT / "scripts/run/run_rh56e2_sim.py"
+
+
+def _load_launcher():
+    spec = importlib.util.spec_from_file_location("run_rh56e2_sim", LAUNCHER)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def _hand(*, active: bool = True, present: bool = True, offset: float = 0.0) -> PicoHandState:
@@ -209,3 +225,154 @@ def test_runtime_closes_provider_and_sink_on_keyboard_interrupt() -> None:
     assert processed == 0
     assert provider.closed == 1
     assert sink.closed == 1
+
+
+def test_cli_help_has_no_policy_or_g1_arguments() -> None:
+    result = subprocess.run(
+        [sys.executable, str(LAUNCHER), "--help"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "--bridge-advertise-ip" in result.stdout
+    assert "policy" not in result.stdout.lower()
+    assert "g1" not in result.stdout.lower()
+
+
+def test_default_config_resolves_outside_repository_root(tmp_path, monkeypatch) -> None:
+    launcher = _load_launcher()
+    monkeypatch.chdir(tmp_path)
+
+    path = launcher.resolve_config_path(None)
+
+    assert path == (
+        ROOT
+        / "assets/rh56e2/somehand/configs/retargeting/bihand/inspire_rh56e2_bihand.yaml"
+    )
+    assert path.is_file()
+
+
+class _ProviderFactory:
+    instances = []
+
+    def __init__(self, **kwargs) -> None:
+        self.kwargs = kwargs
+        self.closed = 0
+        self.__class__.instances.append(self)
+
+    def close(self) -> None:
+        self.closed += 1
+
+
+class _EngineFactory:
+    paths = []
+
+    @classmethod
+    def from_config_path(cls, path: str):
+        cls.paths.append(path)
+        return SimpleNamespace(
+            left_engine=SimpleNamespace(hand_model="left-model"),
+            right_engine=SimpleNamespace(hand_model="right-model"),
+        )
+
+
+class _SinkFactory:
+    calls = []
+
+    def __init__(self, left_model, right_model, **kwargs) -> None:
+        self.__class__.calls.append((left_model, right_model, kwargs))
+
+
+def test_build_runtime_passes_bridge_network_options() -> None:
+    launcher = _load_launcher()
+    _ProviderFactory.instances.clear()
+    _EngineFactory.paths.clear()
+    _SinkFactory.calls.clear()
+    parser = launcher.build_parser()
+    defaults = parser.parse_args([])
+    assert defaults.bridge_host == "0.0.0.0"
+    assert defaults.bridge_port == 63901
+    assert defaults.timeout == 60.0
+    assert defaults.bridge_start_timeout == 10.0
+
+    args = parser.parse_args(
+        [
+            "--bridge-host",
+            "127.0.0.1",
+            "--bridge-port",
+            "65000",
+            "--bridge-advertise-ip",
+            "192.168.50.62",
+            "--timeout",
+            "12.5",
+            "--bridge-start-timeout",
+            "3.5",
+        ]
+    )
+
+    runtime = launcher.build_runtime(
+        args,
+        provider_cls=_ProviderFactory,
+        engine_cls=_EngineFactory,
+        sink_cls=_SinkFactory,
+    )
+
+    provider = _ProviderFactory.instances[-1]
+    assert provider.kwargs == {
+        "timeout": 12.5,
+        "pause_button": None,
+        "arms_button": None,
+        "bridge_host": "127.0.0.1",
+        "bridge_port": 65000,
+        "bridge_advertise_ip": "192.168.50.62",
+        "bridge_video_enabled": False,
+        "bridge_start_timeout": 3.5,
+    }
+    assert runtime.provider is provider
+    assert runtime.first_frame_timeout_s == 12.5
+    assert _SinkFactory.calls == [("left-model", "right-model", {})]
+
+
+def test_build_runtime_closes_provider_if_sink_creation_fails() -> None:
+    launcher = _load_launcher()
+    _ProviderFactory.instances.clear()
+    args = launcher.build_parser().parse_args([])
+
+    class BrokenSink:
+        def __init__(self, *_args, **_kwargs) -> None:
+            raise RuntimeError("viewer failed")
+
+    with pytest.raises(RuntimeError, match="viewer failed"):
+        launcher.build_runtime(
+            args,
+            provider_cls=_ProviderFactory,
+            engine_cls=_EngineFactory,
+            sink_cls=BrokenSink,
+        )
+
+    assert _ProviderFactory.instances[-1].closed == 1
+
+
+def test_existing_g1_rh56e2_entrypoint_and_config_remain_present() -> None:
+    result = subprocess.run(
+        [
+            sys.executable,
+            str(ROOT / "scripts/run/run_sim.py"),
+            "--config-name",
+            "pico4_sim_rh56e2",
+            "--cfg",
+            "job",
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0, result.stderr
+    assert "policy_path:" in result.stdout
+    assert "sim_hands:" in result.stdout
+    assert "enabled: true" in result.stdout
