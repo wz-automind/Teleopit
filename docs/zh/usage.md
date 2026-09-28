@@ -3,7 +3,7 @@
 
 ## 1. 安装
 
-默认主机已经安装 Miniconda：
+默认主机已经安装 Miniconda，G1安装Miniforge：
 
 ```bash
 git clone git@github.com:wz-automind/Teleopit.git
