@@ -42,11 +42,26 @@ python scripts/run/run_sim.py --config-name pico4_sim_rh56e2
 没有 PICO 时可以用 BVH 做 20 步无窗口检查：
 
 ```bash
-python scripts/run/run_sim.py --config-name pico4_sim_rh56e2 \
+python scripts/run/run_sim.py \
+  --config-name pico4_sim_rh56e2 \
   input=bvh \
   input.bvh_file=data/sample_bvh/aiming1_subject1.bvh \
   controller.policy_path=ckpt/track_g1.onnx \
-  viewers=none num_steps=20 sim_hands.enabled=true
+  viewers=none \
+  num_steps=20 \
+  sim_hands.enabled=true
+```
+想打开MuJoCo窗口查看BVH动作，可以运行：
+
+```bash
+python scripts/run/run_sim.py \
+  --config-name pico4_sim_rh56e2 \
+  input=bvh \
+  input.bvh_file=data/sample_bvh/aiming1_subject1.bvh \
+  controller.policy_path=ckpt/track_g1.onnx \
+  viewers=sim2sim \
+  num_steps=0 \
+  sim_hands.enabled=true
 ```
 
 ## 3. 确认 G1、网卡和 E2 端口
