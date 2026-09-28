@@ -6,11 +6,13 @@ Each function runs in its own process with a GLFW context.
 from __future__ import annotations
 
 import multiprocessing as mp
+import os
+import tempfile
 import time
+from pathlib import Path
 
 
-def hide_rh56e2_coordinate_axes(model: object) -> int:
-    """Hide the RGB root-frame geoms embedded in RH56E2 MJCF assets."""
+def _is_rh56e2_coordinate_axis(geom_type: int, size: object, color: object) -> bool:
     import mujoco
     import numpy as np
 
@@ -18,26 +20,63 @@ def hide_rh56e2_coordinate_axes(model: object) -> int:
         ((1.0, 0.0, 0.0), (0.0, 1.0, 0.0), (0.0, 0.0, 1.0)),
         dtype=np.float32,
     )
+    rgb = np.asarray(color, dtype=np.float32)[:3]
+    if not np.any(np.all(np.isclose(axis_colors, rgb, atol=1e-6), axis=1)):
+        return False
+
+    geom_size = np.asarray(size, dtype=np.float64)
+    return bool(
+        (
+            geom_type == int(mujoco.mjtGeom.mjGEOM_CYLINDER)
+            and np.allclose(geom_size[:2], (0.004, 0.075), atol=1e-6)
+        )
+        or (
+            geom_type == int(mujoco.mjtGeom.mjGEOM_SPHERE)
+            and np.isclose(geom_size[0], 0.015, atol=1e-6)
+        )
+    )
+
+
+def hide_rh56e2_coordinate_axes(model: object) -> int:
+    """Hide the RGB root-frame geoms embedded in RH56E2 MJCF assets."""
     hidden = 0
     for geom_id in range(int(model.ngeom)):
-        color = np.asarray(model.geom_rgba[geom_id, :3], dtype=np.float32)
-        if not np.any(np.all(np.isclose(axis_colors, color, atol=1e-6), axis=1)):
-            continue
-
-        geom_type = int(model.geom_type[geom_id])
-        size = np.asarray(model.geom_size[geom_id], dtype=np.float64)
-        is_axis_line = (
-            geom_type == int(mujoco.mjtGeom.mjGEOM_CYLINDER)
-            and np.allclose(size[:2], (0.004, 0.075), atol=1e-6)
-        )
-        is_axis_endpoint = (
-            geom_type == int(mujoco.mjtGeom.mjGEOM_SPHERE)
-            and np.isclose(size[0], 0.015, atol=1e-6)
-        )
-        if is_axis_line or is_axis_endpoint:
+        if _is_rh56e2_coordinate_axis(
+            int(model.geom_type[geom_id]),
+            model.geom_size[geom_id],
+            model.geom_rgba[geom_id],
+        ):
             model.geom_rgba[geom_id, 3] = 0.0
             hidden += 1
     return hidden
+
+
+def create_axis_hidden_mjcf_copy(xml_path: str | Path) -> Path:
+    """Create a temporary sibling MJCF with RH56E2 debug axes transparent."""
+    import mujoco
+
+    source = Path(xml_path).expanduser().resolve()
+    spec = mujoco.MjSpec.from_file(str(source))
+    for geom in spec.geoms:
+        if _is_rh56e2_coordinate_axis(int(geom.type), geom.size, geom.rgba):
+            rgba = list(geom.rgba)
+            rgba[3] = 0.0
+            geom.rgba = rgba
+    spec.compile()
+
+    descriptor, temporary_path = tempfile.mkstemp(
+        prefix=".teleopit-no-axes-",
+        suffix=".xml",
+        dir=source.parent,
+    )
+    os.close(descriptor)
+    output = Path(temporary_path)
+    try:
+        spec.to_file(str(output))
+    except BaseException:
+        output.unlink(missing_ok=True)
+        raise
+    return output
 
 
 def load_robot_viewer_model(xml_path: str, *, title: str = "") -> object:

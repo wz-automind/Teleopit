@@ -68,7 +68,10 @@ def build_runtime(
 
     config_path = resolve_config_path(args.config)
     engine = engine_cls.from_config_path(str(config_path))
-    from teleopit.sim.viewer_subprocess import hide_rh56e2_coordinate_axes
+    from teleopit.sim.viewer_subprocess import (
+        create_axis_hidden_mjcf_copy,
+        hide_rh56e2_coordinate_axes,
+    )
 
     for hand_engine in (engine.left_engine, engine.right_engine):
         model = getattr(hand_engine.hand_model, "model", None)
@@ -84,10 +87,21 @@ def build_runtime(
         bridge_video_enabled=False,
         bridge_start_timeout=args.bridge_start_timeout,
     )
+    hand_models = (
+        engine.left_engine.hand_model,
+        engine.right_engine.hand_model,
+    )
+    original_paths = [getattr(hand_model, "mjcf_path", None) for hand_model in hand_models]
+    temporary_paths: list[Path] = []
     try:
+        for hand_model, original_path in zip(hand_models, original_paths):
+            if original_path is None:
+                continue
+            temporary_path = create_axis_hidden_mjcf_copy(original_path)
+            temporary_paths.append(temporary_path)
+            hand_model.mjcf_path = str(temporary_path)
         sink = sink_cls(
-            engine.left_engine.hand_model,
-            engine.right_engine.hand_model,
+            *hand_models,
         )
         visualizer = getattr(sink, "_visualizer", None)
         combined_model = getattr(visualizer, "model", None)
@@ -96,6 +110,12 @@ def build_runtime(
     except BaseException:
         provider.close()
         raise
+    finally:
+        for hand_model, original_path in zip(hand_models, original_paths):
+            if original_path is not None:
+                hand_model.mjcf_path = original_path
+        for temporary_path in temporary_paths:
+            temporary_path.unlink(missing_ok=True)
 
     return Rh56e2StandaloneRuntime(
         provider,

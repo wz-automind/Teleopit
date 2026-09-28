@@ -389,46 +389,46 @@ def test_build_runtime_passes_bridge_network_options() -> None:
     assert _SinkFactory.calls == [("left-model", "right-model", {})]
 
 
-def test_build_runtime_hides_axes_before_creating_bihand_window() -> None:
+def test_build_runtime_hides_axes_before_creating_bihand_window(tmp_path) -> None:
     launcher = _load_launcher()
     args = launcher.build_parser().parse_args([])
 
-    def hand_model():
-        model = mujoco.MjModel.from_xml_string(
-            """
+    xml_text = """
 <mujoco>
   <worldbody>
     <geom name="axis" type="cylinder" size="0.004 0.075" rgba="0 1 0 1"/>
   </worldbody>
 </mujoco>
 """
-        )
-        return SimpleNamespace(model=model)
+    left_path = tmp_path / "left.xml"
+    right_path = tmp_path / "right.xml"
+    left_path.write_text(xml_text)
+    right_path.write_text(xml_text)
+    left_hand_model = SimpleNamespace(
+        model=mujoco.MjModel.from_xml_path(str(left_path)),
+        mjcf_path=str(left_path),
+    )
+    right_hand_model = SimpleNamespace(
+        model=mujoco.MjModel.from_xml_path(str(right_path)),
+        mjcf_path=str(right_path),
+    )
 
     class EngineFactory:
         @classmethod
         def from_config_path(cls, _path: str):
             return SimpleNamespace(
-                left_engine=SimpleNamespace(hand_model=hand_model()),
-                right_engine=SimpleNamespace(hand_model=hand_model()),
+                left_engine=SimpleNamespace(hand_model=left_hand_model),
+                right_engine=SimpleNamespace(hand_model=right_hand_model),
             )
 
     class SinkFactory:
-        final_model = None
+        final_models = ()
 
         def __init__(self, left_model, right_model) -> None:
-            del left_model, right_model
-            model = mujoco.MjModel.from_xml_string(
-                """
-<mujoco>
-  <worldbody>
-    <geom name="axis" type="cylinder" size="0.004 0.075" rgba="0 1 0 1"/>
-  </worldbody>
-</mujoco>
-"""
+            self.__class__.final_models = (
+                mujoco.MjModel.from_xml_path(left_model.mjcf_path),
+                mujoco.MjModel.from_xml_path(right_model.mjcf_path),
             )
-            self._visualizer = SimpleNamespace(model=model)
-            self.__class__.final_model = model
 
     launcher.build_runtime(
         args,
@@ -437,8 +437,15 @@ def test_build_runtime_hides_axes_before_creating_bihand_window() -> None:
         sink_cls=SinkFactory,
     )
 
-    assert SinkFactory.final_model is not None
-    assert SinkFactory.final_model.geom("axis").rgba[3] == 0.0
+    assert [model.geom("axis").rgba[3] for model in SinkFactory.final_models] == [
+        0.0,
+        0.0,
+    ]
+    assert left_hand_model.mjcf_path == str(left_path)
+    assert right_hand_model.mjcf_path == str(right_path)
+    assert left_path.read_text() == xml_text
+    assert right_path.read_text() == xml_text
+    assert sorted(path.name for path in tmp_path.iterdir()) == ["left.xml", "right.xml"]
 
 
 def test_build_runtime_closes_provider_if_sink_creation_fails() -> None:
