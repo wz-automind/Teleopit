@@ -6,6 +6,15 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def test_g1_bridge_does_not_build_unitree_examples():
+    cmake = (ROOT / "third_party/g1_bridge_sdk/CMakeLists.txt").read_text()
+    disable_examples = "set(BUILD_EXAMPLES OFF CACHE BOOL"
+    add_unitree = "add_subdirectory(thirdparty/unitree_sdk2)"
+
+    assert disable_examples in cmake
+    assert cmake.index(disable_examples) < cmake.index(add_unitree)
+
+
 def test_e2_integration_has_one_user_guide_and_no_migration_tooling():
     removed = (
         "MIGRATION.md",

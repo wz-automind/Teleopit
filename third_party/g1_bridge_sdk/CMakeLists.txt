@@ -7,6 +7,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 find_package(pybind11 REQUIRED)
 
 # unitree_sdk2
+set(BUILD_EXAMPLES OFF CACHE BOOL "Do not build Unitree SDK examples" FORCE)
 add_subdirectory(thirdparty/unitree_sdk2)
 
 pybind11_add_module(g1_bridge_sdk MODULE src/g1_bridge.cpp)
